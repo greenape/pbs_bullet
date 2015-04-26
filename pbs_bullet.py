@@ -13,7 +13,7 @@ j.gray@soton.ac.uk
 import sys
 import subprocess
 import argparse
-import urllib2
+import urllib2, urllib
 from time import sleep
 
 def arguments():

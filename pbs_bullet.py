@@ -91,7 +91,7 @@ def send_notification(title, body, token):
 if __name__ == "__main__":
     args = arguments()
     jobid = args.jobid
-    pb_token = args.pb_token
+    pb_token = args.pb_token.encode("base64").rstrip()
     sleep_time = args.poll_interval
     notify_on = args.notify_on
     lowmem = args.kill_threshold

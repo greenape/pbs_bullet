@@ -83,7 +83,7 @@ def send_notification(title, body, token):
     """
     note = {'type':'note', 'title' : title, 'body' : body}
 
-    request = urllib2.Request('https://www.pushbullet.com/api/pushes')
+    request = urllib2.Request('https://api.pushbullet.com/v2/pushes')
     request.add_header('Authorization', token)
     request.add_data(urllib.urlencode(note))
     return urllib2.urlopen(request)

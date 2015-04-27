@@ -260,7 +260,7 @@ def main():
             logger.error(e)
             raise
         name = "%s - %s" % (jobdetails['Job_Name'], jobid)
-        iden = create_listener(name, token)
+        iden = create_listener(name, pb_token)
 
     while not finished:
         try:

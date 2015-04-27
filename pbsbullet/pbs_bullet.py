@@ -214,7 +214,7 @@ def parse_push(push, token, jobid, jobdetails):
             try:
                 body = check_output(['showstart', jobid])
                 title = "Job %s (%s) Start Time" % (jobdetails['Job_Name'], jobid)
-            except Exception e:
+            except Exception as e:
                 body = str(e)
                 title = "Showstart failed."
             send_notification(title, body, token, target=target)
@@ -225,7 +225,7 @@ def parse_push(push, token, jobid, jobdetails):
                 kill_job(jobid)
                 title = "Attempting to kill job %s, id: %s." % (jobdetails['Job_Name'], str(jobid))
                 body = ""
-            except Exception e:
+            except Exception as e:
                 body = str(e)
                 title = "qdel failed."
             send_notification(title, body, token, target=target)

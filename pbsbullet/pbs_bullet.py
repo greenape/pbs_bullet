@@ -121,7 +121,7 @@ def create_listener(name, token):
     and if successful return the identifier.
     """
     data = urllib.urlencode({'nickname':name, 'type':'streaming'})
-    logger.debug("Sending %s to pushbullet." % data)
+    logger.debug("Adding %s to pushbullet." % name)
     request = urllib2.Request('https://api.pushbullet.com/v2/devices', data, headers={
         'Authorization':"Bearer %s" % token,
         'Accept':'*/*'
@@ -137,7 +137,7 @@ def delete_listener(iden, token):
     """
     Unregister this device as a listener.
     """
-    logger.debug("Sending %s to pushbullet." % data)
+    logger.debug("Deleting %s from pushbullet." % iden)
     request = urllib2.Request('https://api.pushbullet.com/v2/devices/%s' % iden, headers={
         'Authorization':"Bearer %s" % token,
         'Accept':'*/*'
@@ -149,6 +149,48 @@ def delete_listener(iden, token):
     except urllib2.HTTPError as e:
         logger.error("Pushbullet delete error.")
         logger.error(e.read())
+
+def delete_push(push, token):
+    """
+    Delete a push.
+    """
+    logger.debug("Deleting push id %s from pushbullet." % push['iden'])
+    request = urllib2.Request('https://api.pushbullet.com/v2/pushes/%s' % push['iden'], headers={
+        'Authorization':"Bearer %s" % token,
+        'Accept':'*/*'
+    })
+    request.get_method = lambda: 'DELETE'
+    try:
+        resp = urllib2.urlopen(request)
+        return json.load(resp)
+    except urllib2.HTTPError as e:
+        logger.error("Pushbullet delete error.")
+        logger.error(e.read())
+
+
+def check_pushes(iden, token):
+    """
+    Return any undismissed pushes for this device, and dismiss
+    them.
+    """
+    data = urllib.urlencode({'active':'0'})
+    logger.debug("Checking pushes for %s." % iden)
+    request = urllib2.Request('https://api.pushbullet.com/v2/pushes?%s' % data, headers={
+        'Authorization':"Bearer %s" % token,
+        'Accept':'*/*'
+    })
+    try:
+        resp = urllib2.urlopen(request)
+        pushes = json.load(resp)['pushes']
+        pushes = filter(lambda push: 'target_device_iden' in push.keys() and push['target_device_iden'] == iden, pushes)
+        #Delete them from the server
+        map(lambda push: delete_push(push, token), pushes)
+        return pushes
+
+    except urllib2.HTTPError as e:
+        logger.error("Pushbullet check error.")
+        logger.error(e.read())
+
 
 def main():
     args = arguments()

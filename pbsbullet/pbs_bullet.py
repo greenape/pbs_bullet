@@ -211,20 +211,36 @@ def parse_push(push, token, jobid, jobdetails):
         commands = []
         if 'showstart' in cmd:
             # Return the starttime for this job.
-            body = check_output(['showstart', jobid])
-            title = "Job %s (%s) Start Time" % (jobdetails['Job_Name'], jobid)
+            try:
+                body = check_output(['showstart', jobid])
+                title = "Job %s (%s) Start Time" % (jobdetails['Job_Name'], jobid)
+            except Exception e:
+                body = str(e)
+                title = "Showstart failed."
             send_notification(title, body, token, target=target)
             commands.append('showstart')
         if 'cancel' in cmd:
             # Cancel the job
-            kill_job(jobid)
+            try:
+                kill_job(jobid)
+                title = "Attempting to kill job %s, id: %s." % (jobdetails['Job_Name'], str(jobid))
+                body = ""
+            except Exception e:
+                body = str(e)
+                title = "qdel failed."
+            send_notification(title, body, token, target=target)
+            commands.append('showstart')
             commands.append('cancel')
         if 'freemem' in cmd:
             # Get the free memory for nodes
             nodes = get_nodes(jobdetails)
-            freemem = map(free, nodes)
-            body = "Free memory - %s" % ", ".join(map(lambda (node, free): "%s: %f/%" % (node, free), zip(nodes, freemem)))
-            title = "Job %s (%s) Free Memory" % (jobdetails['Job_Name'], jobid)
+            try:
+                freemem = map(free, nodes)
+                body = "Free memory - %s" % ", ".join(map(lambda (node, free): "%s: %f/%" % (node, free), zip(nodes, freemem)))
+                title = "Job %s (%s) Free Memory" % (jobdetails['Job_Name'], jobid)
+            except Exception as e:
+                body = str(e)
+                title = "Freemem check failed."
             send_notification(title, body, token, target=target)
             commands.append('freemem')
         assert commands

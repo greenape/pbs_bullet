@@ -258,7 +258,7 @@ def main():
             logger.error('qstat command failed. Bailing out.')
             logger.error('Error was:')
             logger.error(e)
-            break
+            raise
         name = "%s - %s" % (jobdetails['Job_Name'], jobid)
         iden = create_listener(name, token)
 

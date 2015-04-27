@@ -227,7 +227,7 @@ def parse_push(push, token, jobid, jobdetails):
             title = "Job %s (%s) Free Memory" % (jobdetails['Job_Name'], jobid)
             send_notification(title, body, token, target=target)
             commands.append('freemem')
-        assert not commands.empty()
+        assert commands
     except KeyError:
         logger.debug("No body in this push.")
     except AssertionError:

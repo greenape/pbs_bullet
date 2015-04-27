@@ -148,7 +148,7 @@ def delete_listener(iden, token):
     request.get_method = lambda: 'DELETE'
     try:
         resp = urllib2.urlopen(request)
-        return json.load(resp)['iden']
+        return json.load(resp)
     except urllib2.HTTPError as e:
         logger.error("Pushbullet delete error.")
         logger.error(e.read())
@@ -186,8 +186,10 @@ def check_pushes(iden, token):
         resp = urllib2.urlopen(request)
         pushes = json.load(resp)['pushes']
         pushes = filter(lambda push: 'target_device_iden' in push.keys() and push['target_device_iden'] == iden, pushes)
+        logger.debug("Got %d pushes." % len(pushes))
         #Delete them from the server
         map(lambda push: delete_push(push, token), pushes)
+        pushes.reverse()
         return pushes
 
     except urllib2.HTTPError as e:
@@ -200,24 +202,36 @@ def parse_push(push, token, jobid, jobdetails):
     This is very primitive - we look for preset strings
     in the body of the push.
     """
+    logger.debug("Parsing push msg.")
 
-    cmd = push['body'].lower()
-    target = push['source_device_iden']
-    if 'showstart' in cmd:
-        # Return the starttime for this job.
-        body = subprocess.check_output(['showstart', jobid])
-        title = "Job %s (%s) Start Time" % (jobdetails['Job_Name'], jobid)
-        send_notification(title, body, token, target=target):
-    if 'cancel' in cmd:
-        # Cancel the job
-        kill_job(jobid)
-    if 'freemem' in cmd:
-        # Get the free memory for nodes
-        nodes = get_nodes(jobdetails)
-        freemem = map(free, nodes)
-        body = "Free memory - %s" % ", ".join(map(lambda (node, free): "%s: %f/%" % (node, free), zip(nodes, freemem)))
-        title = "Job %s (%s) Free Memory" % (jobdetails['Job_Name'], jobid)
-        send_notification(title, body, token, target=target):
+    try:
+        cmd = push['body'].lower()
+        logger.debug(cmd)
+        target = push['source_device_iden']
+        commands = []
+        if 'showstart' in cmd:
+            # Return the starttime for this job.
+            body = subprocess.check_output(['showstart', jobid])
+            title = "Job %s (%s) Start Time" % (jobdetails['Job_Name'], jobid)
+            send_notification(title, body, token, target=target)
+            commands.append('showstart')
+        if 'cancel' in cmd:
+            # Cancel the job
+            kill_job(jobid)
+            commands.append('cancel')
+        if 'freemem' in cmd:
+            # Get the free memory for nodes
+            nodes = get_nodes(jobdetails)
+            freemem = map(free, nodes)
+            body = "Free memory - %s" % ", ".join(map(lambda (node, free): "%s: %f/%" % (node, free), zip(nodes, freemem)))
+            title = "Job %s (%s) Free Memory" % (jobdetails['Job_Name'], jobid)
+            send_notification(title, body, token, target=target)
+            commands.append('freemem')
+        assert not commands.empty()
+    except KeyError:
+        logger.debug("No body in this push.")
+    except AssertionError:
+        logger.debug("No commands in this push.")
 
 
 def main():
@@ -236,6 +250,18 @@ def main():
     started = False
     finished = False
 
+    if pb_token is not None:
+        try:
+            logger.debug("Checking status for job %s" % jobid)
+            jobdetails = parse_job(subprocess.check_output(['qstat', '-f', jobid]))
+        except Exception as e:
+            logger.error('qstat command failed. Bailing out.')
+            logger.error('Error was:')
+            logger.error(e)
+            break
+        name = "%s - %s" % (jobdetails['Job_Name'], jobid)
+        iden = create_listener(name, token)
+
     while not finished:
         try:
             logger.debug("Checking status for job %s" % jobid)
@@ -244,6 +270,8 @@ def main():
             logger.error('qstat command failed. Bailing out.')
             logger.error('Error was:')
             logger.error(e)
+            if pb_token is not None:
+                delete_listener(iden, pb_token)
             break
         if jobdetails['job_state'] == 'R':
             logger.debug("Job %s is running." % jobid)
@@ -282,9 +310,11 @@ def main():
 
         #Check for pushed commands 
         if pb_token is not None:
-
+            map(lambda push: parse_push(push, pb_token, jobid, jobdetails), check_pushes(iden, pb_token))
         logger.debug("Sleeping for %ds" % sleep_time)
         sleep(sleep_time)
+    if pb_token is not None:
+        delete_listener(iden, pb_token)
 
 if __name__ == "__main__":
     main()

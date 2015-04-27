@@ -98,11 +98,14 @@ def kill_notify(jobid, jobdetails, nodes, freemem, pb_token):
     body += map(lambda (node, mem): "%s - %f\%", zip(nodes, freemem))
     send_notification(title, "\n".join(body), pb_token)
 
-def send_notification(title, body, token):
+def send_notification(title, body, token, target=None):
     """
     Send a pushbullet notification.
     """
-    note = json.dumps({"type":"note", "title": title, "body": body})
+    data = {"type":"note", "title": title, "body": body}
+    if target is not None:
+        data['device_iden'] = target
+    note = json.dumps(data)
     logger.debug("Sending %s to pushbullet." % note)
     request = urllib2.Request('https://api.pushbullet.com/v2/pushes', note, headers={
         'Authorization':"Bearer %s" % token,
@@ -191,6 +194,31 @@ def check_pushes(iden, token):
         logger.error("Pushbullet check error.")
         logger.error(e.read())
 
+def parse_push(push, token, jobid, jobdetails):
+    """
+    Take a push, and execute some commands.
+    This is very primitive - we look for preset strings
+    in the body of the push.
+    """
+
+    cmd = push['body'].lower()
+    target = push['source_device_iden']
+    if 'showstart' in cmd:
+        # Return the starttime for this job.
+        body = subprocess.check_output(['showstart', jobid])
+        title = "Job %s (%s) Start Time" % (jobdetails['Job_Name'], jobid)
+        send_notification(title, body, token, target=target):
+    if 'cancel' in cmd:
+        # Cancel the job
+        kill_job(jobid)
+    if 'freemem' in cmd:
+        # Get the free memory for nodes
+        nodes = get_nodes(jobdetails)
+        freemem = map(free, nodes)
+        body = "Free memory - %s" % ", ".join(map(lambda (node, free): "%s: %f/%" % (node, free), zip(nodes, freemem)))
+        title = "Job %s (%s) Free Memory" % (jobdetails['Job_Name'], jobid)
+        send_notification(title, body, token, target=target):
+
 
 def main():
     args = arguments()
@@ -251,6 +279,10 @@ def main():
             if pb_token is not None and "finish" in notify_on:
                 finish_notify(jobid, jobdetails, pb_token)
             break
+
+        #Check for pushed commands 
+        if pb_token is not None:
+
         logger.debug("Sleeping for %ds" % sleep_time)
         sleep(sleep_time)
 

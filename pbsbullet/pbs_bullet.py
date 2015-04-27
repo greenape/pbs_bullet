@@ -233,8 +233,8 @@ def parse_push(push, token, jobid, jobdetails):
             commands.append('cancel')
         if 'freemem' in cmd:
             # Get the free memory for nodes
-            nodes = get_nodes(jobdetails)
             try:
+                nodes = get_nodes(jobdetails)
                 freemem = map(free, nodes)
                 body = "Free memory - %s" % ", ".join(map(lambda (node, free): "%s: %f/%" % (node, free), zip(nodes, freemem)))
                 title = "Job %s (%s) Free Memory" % (jobdetails['Job_Name'], jobid)

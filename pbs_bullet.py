@@ -13,6 +13,7 @@ j.gray@soton.ac.uk
 import sys
 import subprocess
 import argparse
+import json
 import urllib2, urllib
 from time import sleep
 
@@ -81,12 +82,14 @@ def send_notification(title, body, token):
     """
     Send a pushbullet notification.
     """
-    note = {'type':'note', 'title' : title, 'body' : body}
+    note = json.dumps({"type":"note", "title": title, "body": body})
 
-    request = urllib2.Request('https://api.pushbullet.com/v2/pushes')
-    request.add_header('Authorization', token)
-    request.add_data(urllib.urlencode(note))
-    return urllib2.urlopen(request)
+    request = urllib2.Request('https://api.pushbullet.com/v2/pushes', note, headers={
+        'Authorization':"Bearer %s" % token,
+        'Content-Type':'application/json',
+        'Accept':'*/*'
+    })
+    urllib2.urlopen(request)
 
 if __name__ == "__main__":
     args = arguments()

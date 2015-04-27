@@ -21,7 +21,7 @@ logging.basicConfig()
 logger = logging.getLogger(__name__)
 
 try:
-    from subprocess import check_output
+    from subprocess import check_output, call
 except:
     logger.error("pbs_bullet uses the check_output command, added in python 2.7.")
     sys.exit(1)
@@ -64,14 +64,14 @@ def kill_job(jobid):
     Attempt to kill a job using qdel.
     """
 
-    return subprocess.call(['qdel', jobid])
+    return call(['qdel', jobid])
 
 def check_free(node):
     """
     Use rsh and free to get the percentage of free memory on a node.
     """
 
-    return subprocess.check_output(["rsh", node, "free", "|",  "awk",  "'FNR == 3 {print $4/($3+$4)*100}'"])
+    return check_output(["rsh", node, "free", "|",  "awk",  "'FNR == 3 {print $4/($3+$4)*100}'"])
 
 def start_notify(jobid, jobdetails, nodes, pb_token):
     """
@@ -211,7 +211,7 @@ def parse_push(push, token, jobid, jobdetails):
         commands = []
         if 'showstart' in cmd:
             # Return the starttime for this job.
-            body = subprocess.check_output(['showstart', jobid])
+            body = check_output(['showstart', jobid])
             title = "Job %s (%s) Start Time" % (jobdetails['Job_Name'], jobid)
             send_notification(title, body, token, target=target)
             commands.append('showstart')
@@ -253,7 +253,7 @@ def main():
     if pb_token is not None:
         try:
             logger.debug("Checking status for job %s" % jobid)
-            jobdetails = parse_job(subprocess.check_output(['qstat', '-f', jobid]))
+            jobdetails = parse_job(check_output(['qstat', '-f', jobid]))
         except Exception as e:
             logger.error('qstat command failed. Bailing out.')
             logger.error('Error was:')
@@ -265,7 +265,7 @@ def main():
     while not finished:
         try:
             logger.debug("Checking status for job %s" % jobid)
-            jobdetails = parse_job(subprocess.check_output(['qstat', '-f', jobid]))
+            jobdetails = parse_job(check_output(['qstat', '-f', jobid]))
         except Exception as e:
             logger.error('qstat command failed. Bailing out.')
             logger.error('Error was:')

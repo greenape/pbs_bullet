@@ -115,6 +115,41 @@ def send_notification(title, body, token):
         logger.error("Pushbullet notify error.")
         logger.error(e.read())
 
+def create_listener(name, token):
+    """
+    Register this device to receive pushbullet notifications,
+    and if successful return the identifier.
+    """
+    data = urllib.urlencode({'nickname':name, 'type':'streaming'})
+    logger.debug("Sending %s to pushbullet." % data)
+    request = urllib2.Request('https://api.pushbullet.com/v2/devices', data, headers={
+        'Authorization':"Bearer %s" % token,
+        'Accept':'*/*'
+    })
+    try:
+        resp = urllib2.urlopen(request)
+        return json.load(resp)['iden']
+    except urllib2.HTTPError as e:
+        logger.error("Pushbullet register error.")
+        logger.error(e.read())
+
+def delete_listener(iden, token):
+    """
+    Unregister this device as a listener.
+    """
+    logger.debug("Sending %s to pushbullet." % data)
+    request = urllib2.Request('https://api.pushbullet.com/v2/devices/%s' % iden, headers={
+        'Authorization':"Bearer %s" % token,
+        'Accept':'*/*'
+    })
+    request.get_method = lambda: 'DELETE'
+    try:
+        resp = urllib2.urlopen(request)
+        return json.load(resp)['iden']
+    except urllib2.HTTPError as e:
+        logger.error("Pushbullet delete error.")
+        logger.error(e.read())
+
 def main():
     args = arguments()
     numeric_level = getattr(logging, args.log_level.upper(), None)

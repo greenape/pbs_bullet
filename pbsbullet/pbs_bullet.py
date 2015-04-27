@@ -287,7 +287,7 @@ def main():
                 logger.debug("Checking memory on %s" % ", ".join(nodes))
                 freemem = map(free, nodes)
                 logger.debug("Free memory - %s" % ", ".join(map(lambda (node, free): "%s: %f/%" % (node, free), zip(nodes, freemem))))
-                if not filter(lambda x: float(x) < lowmem, freemem).empty():
+                if filter(lambda x: float(x) < lowmem, freemem):
                     logger.debug("Free memory below threshold. Killing the job.")
                     try:
                         kill_job(jobid)

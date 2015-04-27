@@ -11,7 +11,6 @@ j.gray@soton.ac.uk
 """
 
 import sys
-import subprocess
 import argparse
 import json
 import urllib2, urllib
@@ -20,6 +19,12 @@ from time import sleep
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
+
+try:
+    from subprocess import check_output
+except:
+    logger.error("pbs_bullet uses the check_output command, added in python 2.7.")
+    sys.exit(1)
 
 def arguments():
     parser = argparse.ArgumentParser(

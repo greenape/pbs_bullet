@@ -24,3 +24,8 @@ pbs-bullet --pushbullet-token <your api token> --low-mem 10 --notify-on kill <jo
 #Don't notify, and check every minute.
 pbs-bullet --low-mem 10 --poll-interval 60 <jobnumber>
 ```
+
+(You can also run the python module directly with python -m pbsbullet.pbs_bullet.)
+
+Use this at your own risk: I have tested this only briefly, and only on Southampton's IRIDIS. I have no idea if it will
+work in other PBS environments, and I'd strongly suggest exercising extreme caution.

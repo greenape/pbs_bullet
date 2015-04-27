@@ -136,6 +136,7 @@ def main():
             logger.error(e)
             break
         if jobdetails['job_state'] == 'R':
+            logger.debug("Job %s is running." % jobid)
             nodes = get_nodes(jobdetails)
             if not started:
                 started = True

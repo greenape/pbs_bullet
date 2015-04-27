@@ -116,7 +116,8 @@ if __name__ == "__main__":
             freemem = map(free, nodes)
             if not filter(lambda x: float(x) < lowmem, freemem).empty():
                 kill_job(jobid)
-                kill_notify(jobid, jobdetails, nodes, freemem, pb_token)
+                if pb_token is not None and "kill" in notify_on:
+                    kill_notify(jobid, jobdetails, nodes, freemem, pb_token)
 
         elif jobdetails['job_state'] != 'R' and started:
             #Job finished. Notify if appropriate

@@ -270,10 +270,12 @@ def main():
     jobid = args.jobid
     if args.submit:
         try:
+            jobin = jobid
             jobid = check_output(['qsub', jobid])
             jobid = jobid.strip().split(".")[0]
+            logger.info("Submitted %s, got id %s" % (jobin, jobid))
         except Exception as e:
-            logger.error("Failed to submit %s" % jobid)
+            logger.error("Failed to submit %s" % jobin)
             logger.error("Bailing out.")
             raise
 

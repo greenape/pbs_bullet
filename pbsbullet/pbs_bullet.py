@@ -249,7 +249,7 @@ def parse_push(push, token, jobid, jobdetails):
         logger.debug("No commands in this push.")
 
 
-def make_free_str(nodes, free):
+def make_free_str(nodes, freemem):
     return "Free memory - %s" % ", ".join(map(lambda (node, free): "%s: %s%%" % (node, free.strip()), zip(nodes, freemem)))
 
 def main():

@@ -11,9 +11,9 @@ from notify import Notifier
 class Watcher(object):
     def __init__(self, jobid, qstat, qdel, showstart, events, lowmem=0., pb_token=None):
         self.jobid = jobid
-        self.qstat_cmd = qstat + jobid
-        self.qdel_cmd = qdel + jobid
-        self.showstart_cmd = showstart + jobid
+        self.qstat_cmd = qstat + [jobid]
+        self.qdel_cmd = qdel + [jobid]
+        self.showstart_cmd = showstart + [jobid]
         self.lowmem = lowmem
 
         self.started = False

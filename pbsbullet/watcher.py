@@ -93,7 +93,7 @@ class Watcher(object):
             logger.error(e)
 
 
-    def parse_job(jobdetails):
+    def parse_job(self, jobdetails):
         """
         Turn the output of qstat -f into a dictionary.
         """
@@ -106,7 +106,7 @@ class Watcher(object):
         """
         try:
             logger.debug("Checking status for job %s" % self.jobid)
-            jobdetails = parse_job(check_output(self.qstat_cmd))
+            jobdetails = self.parse_job(check_output(self.qstat_cmd))
         except Exception as e:
             logger.error('qstat command failed. Bailing out.')
             logger.error('Error was:')

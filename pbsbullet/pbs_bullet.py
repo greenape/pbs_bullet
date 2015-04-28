@@ -57,7 +57,7 @@ def get_nodes(job_dict):
     """
 
     nodes = job_dict['exec_host']
-    return set(map(lambda x: x.split('/')[0], nodes.split('+')))
+    return list(set(map(lambda x: x.split('/')[0], nodes.split('+'))))
 
 def kill_job(jobid):
     """
@@ -236,7 +236,7 @@ def parse_push(push, token, jobid, jobdetails):
             try:
                 nodes = get_nodes(jobdetails)
                 freemem = map(check_free, nodes)
-                body = "Free memory - %s" % ", ".join(map(lambda (node, free): "%s: %s/%" % (node, free), zip(nodes, freemem)))
+                body = "Free memory - %s" % ", ".join(map(lambda (node, free): "%s: %s%%" % (node, free.strip()), zip(nodes, freemem)))
                 title = "Job %s (%s) Free Memory" % (jobdetails['Job_Name'], jobid)
             except Exception as e:
                 body = str(e)
@@ -304,7 +304,7 @@ def main():
                 freemem = map(check_free, nodes)
                 logger.debug(str(freemem))
                 logger.debug(str(nodes))
-                logger.debug("Free memory - %s" % ", ".join(map(lambda (node, free): "%s: %s/%" % (node, free), zip(nodes, freemem))))
+                logger.debug("Free memory - %s" % ", ".join(map(lambda (node, free): "%s: %s%%" % (node, free.strip()), zip(nodes, freemem))))
                 if filter(lambda x: float(x) < lowmem, freemem):
                     logger.debug("Free memory below threshold. Killing the job.")
                     try:

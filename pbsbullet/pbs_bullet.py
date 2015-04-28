@@ -71,12 +71,12 @@ def main():
     events = args.notify_on
     lowmem = args.kill_threshold
 
-    # Create the job object
-    job = Watcher(jobid, args.qstat, args.qdel, args.showstart, events, lowmem=lowmem, pb_token=pb_token))
-    # Set a notifier for it
-    if pb_token:
-        job.set_notifier(pb_token)
     try:
+        # Create the job object
+        job = Watcher(jobid, args.qstat, args.qdel, args.showstart, events, lowmem=lowmem))
+        # Set a notifier for it
+        if pb_token:
+            job.set_notifier(pb_token)
         while not finished:
             job.update()
             logger.debug("Sleeping for %ds" % sleep_time)

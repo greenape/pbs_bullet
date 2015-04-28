@@ -51,14 +51,14 @@ class Watcher(object):
 		self.jobdetails = self.qstat()
 		#Check and update run/finish status
 		if self.jobdetails['job_state'] == 'R':
-			if not self.started:
+			if self.started:
+				#Check memory use
+            	self.memory_safety()
+            else:
 				self.started = True
 				self.nodes = get_nodes()
 				if self.notifier:
 					self.start_notify()
-
-			#Check memory use
-            self.memory_safety()
         elif jobdetails['job_state'] != 'R' and started:
             #Job finished. Notify if appropriate
             self.finished = True

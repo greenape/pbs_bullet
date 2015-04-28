@@ -78,7 +78,7 @@ def start_notify(jobid, jobdetails, nodes, pb_token):
     Send a notification that the job has started.
     """
     title = "%s, id: %s, started." % (jobdetails['Job_Name'], str(jobid))
-    body = "Running on nodes %s, and due to finish %s." % (", ".join(nodes), jobdetails['etime']) 
+    body = "Running on nodes %s, and started %s." % (", ".join(nodes), jobdetails['etime']) 
     send_notification(title, body, pb_token)
 
 def finish_notify(jobid, jobdetails, pb_token):
@@ -206,6 +206,7 @@ def parse_push(push, token, jobid, jobdetails):
     try:
         cmd = push['body'].lower()
         logger.debug(cmd)
+        logger.debug(push)
         target = push['source_device_iden']
         commands = []
         if 'showstart' in cmd:
@@ -243,7 +244,8 @@ def parse_push(push, token, jobid, jobdetails):
             send_notification(title, body, token, target=target)
             commands.append('freemem')
         assert commands
-    except KeyError:
+    except KeyError as e:
+        logger.debug(e)
         logger.debug("No body in this push.")
     except AssertionError:
         logger.debug("No commands in this push.")
@@ -289,9 +291,7 @@ def main():
                 logger.error('qstat command failed. Bailing out.')
                 logger.error('Error was:')
                 logger.error(e)
-                if pb_token is not None:
-                    delete_listener(iden, pb_token)
-                break
+                raise
             logger.debug("Job state is %s" % jobdetails['job_state'])
             if jobdetails['job_state'] == 'R':
                 logger.debug("Job %s is running." % jobid)

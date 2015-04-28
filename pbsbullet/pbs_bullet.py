@@ -14,6 +14,11 @@ import sys
 import argparse
 import logging
 from time import sleep
+try:
+    from subprocess import check_output, call
+except:
+    logger.error("pbs_bullet uses the check_output command, added in python 2.7.")
+    sys.exit(1)
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger('pbs_bullet')
@@ -61,7 +66,7 @@ def main():
     if args.submit:
         try:
             jobin = jobid
-            jobid = check_output(args.qsub_cmd + jobid)
+            jobid = check_output(args.qsub_cmd + [jobid])
             jobid = jobid.strip().split(".")[0]
             logger.info("Submitted %s, got id %s" % (jobin, jobid))
         except Exception as e:

@@ -42,6 +42,8 @@ def arguments():
         help="Specifies the qstat command to use for checking status.")
     parser.add_argument('--qdel-cmd', dest='qdel_cmd', default=['qdel'],
         help="Specifies the command to use to delete a pbs job.")
+    parser.add_argument('--showstart-cmd', dest='showstart_cmd', default=['showstart'],
+        help="Specifies the command to use to get the estimated start time.")
     args, extras = parser.parse_known_args()
     return args
 
@@ -59,7 +61,7 @@ def main():
     if args.submit:
         try:
             jobin = jobid
-            jobid = check_output(args.qsub + jobid)
+            jobid = check_output(args.qsub_cmd + jobid)
             jobid = jobid.strip().split(".")[0]
             logger.info("Submitted %s, got id %s" % (jobin, jobid))
         except Exception as e:
@@ -74,7 +76,7 @@ def main():
 
     try:
         # Create the job object
-        job = Watcher(jobid, args.qstat, args.qdel, args.showstart, events, lowmem=lowmem)
+        job = Watcher(jobid, args.qstat_cmd, args.qdel_cmd, args.showstart_cmd, events, lowmem=lowmem)
         # Set a notifier for it
         if pb_token:
             job.set_notifier(pb_token)

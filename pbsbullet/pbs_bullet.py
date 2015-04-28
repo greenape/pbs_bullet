@@ -40,6 +40,8 @@ def arguments():
         help="Number of seconds to wait between each check. Defaults to 5 minutes.")
     parser.add_argument('--log-level', dest='log_level', type=str, choices=['debug',
         'info', 'warning', 'error'], default='info', nargs="?")
+    parser.add_argument('--submit', dest='submit', action="store_true",
+        help="If set, assumes a pbs script has been passed and attempt to submit it.")
     args, extras = parser.parse_known_args()
     return args
 
@@ -266,6 +268,15 @@ def main():
 
     logger.setLevel(numeric_level)
     jobid = args.jobid
+    if args.submit:
+        try:
+            jobid = check_output(['qsub', jobid])
+            jobid = jobid.strip().split(".")[0]
+        except Exception as e:
+            logger.error("Failed to submit %s" % jobid)
+            logger.error("Bailing out.")
+            raise
+
     pb_token = args.pb_token
     sleep_time = args.poll_interval
     notify_on = args.notify_on

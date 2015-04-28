@@ -207,7 +207,11 @@ def parse_push(push, token, jobid, jobdetails):
         cmd = push['body'].lower()
         logger.debug(cmd)
         logger.debug(push)
-        target = push['source_device_iden']
+        try:
+            target = push['source_device_iden']
+        except KeyError:
+            logger.debug("No specific device to send to.")
+            target = None
         commands = []
         if 'showstart' in cmd:
             # Return the starttime for this job.

@@ -73,7 +73,7 @@ def main():
 
     try:
         # Create the job object
-        job = Watcher(jobid, args.qstat, args.qdel, args.showstart, events, lowmem=lowmem))
+        job = Watcher(jobid, args.qstat, args.qdel, args.showstart, events, lowmem=lowmem)
         # Set a notifier for it
         if pb_token:
             job.set_notifier(pb_token)

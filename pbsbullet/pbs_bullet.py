@@ -94,8 +94,7 @@ def kill_notify(jobid, jobdetails, nodes, freemem, pb_token):
     Send a notification that the job is being killed.
     """
     title = "Attempting to kill job %s, id: %s." % (jobdetails['Job_Name'], str(jobid))
-    body = ["Free memory on nodes: "]
-    body += map(lambda (node, mem): "%s - %f\%", zip(nodes, freemem))
+    body = make_free_str(nodes, freemem)
     send_notification(title, "\n".join(body), pb_token)
 
 def send_notification(title, body, token, target=None):
@@ -236,7 +235,7 @@ def parse_push(push, token, jobid, jobdetails):
             try:
                 nodes = get_nodes(jobdetails)
                 freemem = map(check_free, nodes)
-                body = "Free memory - %s" % ", ".join(map(lambda (node, free): "%s: %s%%" % (node, free.strip()), zip(nodes, freemem)))
+                body = make_free_str(nodes, freemem)
                 title = "Job %s (%s) Free Memory" % (jobdetails['Job_Name'], jobid)
             except Exception as e:
                 body = str(e)
@@ -249,6 +248,9 @@ def parse_push(push, token, jobid, jobdetails):
     except AssertionError:
         logger.debug("No commands in this push.")
 
+
+def make_free_str(nodes, free):
+    return "Free memory - %s" % ", ".join(map(lambda (node, free): "%s: %s%%" % (node, free.strip()), zip(nodes, freemem)))
 
 def main():
     args = arguments()
@@ -266,74 +268,78 @@ def main():
     started = False
     finished = False
 
-    if pb_token is not None:
-        try:
-            logger.debug("Checking status for job %s" % jobid)
-            jobdetails = parse_job(check_output(['qstat', '-f', jobid]))
-        except Exception as e:
-            logger.error('qstat command failed. Bailing out.')
-            logger.error('Error was:')
-            logger.error(e)
-            raise
-        name = "%s - %s" % (jobdetails['Job_Name'], jobid)
-        iden = create_listener(name, pb_token)
-
-    while not finished:
-        try:
-            logger.debug("Checking status for job %s" % jobid)
-            jobdetails = parse_job(check_output(['qstat', '-f', jobid]))
-        except Exception as e:
-            logger.error('qstat command failed. Bailing out.')
-            logger.error('Error was:')
-            logger.error(e)
-            if pb_token is not None:
-                delete_listener(iden, pb_token)
-            break
-        logger.debug("Job state is %s" % jobdetails['job_state'])
-        if jobdetails['job_state'] == 'R':
-            logger.debug("Job %s is running." % jobid)
-            nodes = get_nodes(jobdetails)
-            if not started:
-                started = True
-
-                if pb_token is not None and "start" in notify_on:
-                    start_notify(jobid, jobdetails, nodes, pb_token)
-
-            #Check memory use
-            try:
-                logger.debug("Checking memory on %s" % ", ".join(nodes))
-                freemem = map(check_free, nodes)
-                logger.debug(str(freemem))
-                logger.debug(str(nodes))
-                logger.debug("Free memory - %s" % ", ".join(map(lambda (node, free): "%s: %s%%" % (node, free.strip()), zip(nodes, freemem))))
-                if filter(lambda x: float(x) < lowmem, freemem):
-                    logger.debug("Free memory below threshold. Killing the job.")
-                    try:
-                        kill_job(jobid)
-                    except Exception as e:
-                        logger.error("qdel command failed.")
-                        logger.error('Error was:')
-                        logger.error(e)
-                    if pb_token is not None and "kill" in notify_on:
-                        kill_notify(jobid, jobdetails, nodes, freemem, pb_token)
-            except Exception as e:
-                logger.error("Freemem check failed.")
-                logger.error(e)
-
-        elif jobdetails['job_state'] != 'R' and started:
-            #Job finished. Notify if appropriate
-            finished = True
-            if pb_token is not None and "finish" in notify_on:
-                finish_notify(jobid, jobdetails, pb_token)
-            break
-
-        #Check for pushed commands 
+    try:
         if pb_token is not None:
-            map(lambda push: parse_push(push, pb_token, jobid, jobdetails), check_pushes(iden, pb_token))
-        logger.debug("Sleeping for %ds" % sleep_time)
-        sleep(sleep_time)
-    if pb_token is not None:
-        delete_listener(iden, pb_token)
+            try:
+                logger.debug("Checking status for job %s" % jobid)
+                jobdetails = parse_job(check_output(['qstat', '-f', jobid]))
+            except Exception as e:
+                logger.error('qstat command failed. Bailing out.')
+                logger.error('Error was:')
+                logger.error(e)
+                raise
+            name = "%s - %s" % (jobdetails['Job_Name'], jobid)
+            iden = create_listener(name, pb_token)
+
+        while not finished:
+            try:
+                logger.debug("Checking status for job %s" % jobid)
+                jobdetails = parse_job(check_output(['qstat', '-f', jobid]))
+            except Exception as e:
+                logger.error('qstat command failed. Bailing out.')
+                logger.error('Error was:')
+                logger.error(e)
+                if pb_token is not None:
+                    delete_listener(iden, pb_token)
+                break
+            logger.debug("Job state is %s" % jobdetails['job_state'])
+            if jobdetails['job_state'] == 'R':
+                logger.debug("Job %s is running." % jobid)
+                nodes = get_nodes(jobdetails)
+                if not started:
+                    started = True
+
+                    if pb_token is not None and "start" in notify_on:
+                        start_notify(jobid, jobdetails, nodes, pb_token)
+
+                #Check memory use
+                try:
+                    logger.debug("Checking memory on %s" % ", ".join(nodes))
+                    freemem = map(check_free, nodes)
+                    logger.debug(str(freemem))
+                    logger.debug(str(nodes))
+                    logger.debug(make_free_str(nodes, freemem))
+                    if filter(lambda x: float(x) < lowmem, freemem):
+                        logger.debug("Free memory below threshold. Killing the job.")
+                        try:
+                            kill_job(jobid)
+                        except Exception as e:
+                            logger.error("qdel command failed.")
+                            logger.error('Error was:')
+                            logger.error(e)
+                        if pb_token is not None and "kill" in notify_on:
+                            kill_notify(jobid, jobdetails, nodes, freemem, pb_token)
+                except Exception as e:
+                    logger.error("Freemem check failed.")
+                    logger.error(e)
+
+            elif jobdetails['job_state'] != 'R' and started:
+                #Job finished. Notify if appropriate
+                finished = True
+                if pb_token is not None and "finish" in notify_on:
+                    finish_notify(jobid, jobdetails, pb_token)
+                break
+
+            #Check for pushed commands 
+            if pb_token is not None:
+                map(lambda push: parse_push(push, pb_token, jobid, jobdetails), check_pushes(iden, pb_token))
+            logger.debug("Sleeping for %ds" % sleep_time)
+            sleep(sleep_time)
+    except Exception:
+        raise
+    finally:
+        if pb_token is not None:
+            delete_listener(iden, pb_token)
 
 if __name__ == "__main__":
     main()

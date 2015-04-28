@@ -73,35 +73,35 @@ def check_free(node):
 
     return check_output(["rsh", node, "free", "|",  "awk",  "'FNR == 3 {print $4/($3+$4)*100}'"])
 
-def start_notify(jobid, jobdetails, nodes, pb_token):
+def start_notify(jobid, jobdetails, nodes, pb_token, iden):
     """
     Send a notification that the job has started.
     """
     title = "%s, id: %s, started." % (jobdetails['Job_Name'], str(jobid))
     body = "Running on nodes %s, and started %s." % (", ".join(nodes), jobdetails['etime']) 
-    send_notification(title, body, pb_token)
+    send_notification(title, body, pb_token, iden)
 
-def finish_notify(jobid, jobdetails, pb_token):
+def finish_notify(jobid, jobdetails, pb_token, iden):
     """
     Send a notification that the job has completed.
     """
     title = "%s, id: %s, finished." % (jobdetails['Job_Name'], str(jobid))
     body = ""
-    send_notification(title, body, pb_token)
+    send_notification(title, body, pb_token, iden)
 
-def kill_notify(jobid, jobdetails, nodes, freemem, pb_token):
+def kill_notify(jobid, jobdetails, nodes, freemem, pb_token, iden):
     """
     Send a notification that the job is being killed.
     """
     title = "Attempting to kill job %s, id: %s." % (jobdetails['Job_Name'], str(jobid))
     body = make_free_str(nodes, freemem)
-    send_notification(title, "\n".join(body), pb_token)
+    send_notification(title, "\n".join(body), pb_token, iden)
 
-def send_notification(title, body, token, target=None):
+def send_notification(title, body, token, iden, target=None):
     """
     Send a pushbullet notification.
     """
-    data = {"type":"note", "title": title, "body": body}
+    data = {"type":"note", "title": title, "body": body, "source_device_iden":iden}
     if target is not None:
         data['device_iden'] = target
     note = json.dumps(data)
@@ -195,7 +195,7 @@ def check_pushes(iden, token):
         logger.error("Pushbullet check error.")
         logger.error(e.read())
 
-def parse_push(push, token, jobid, jobdetails):
+def parse_push(push, token, jobid, jobdetails, iden):
     """
     Take a push, and execute some commands.
     This is very primitive - we look for preset strings
@@ -221,7 +221,7 @@ def parse_push(push, token, jobid, jobdetails):
             except Exception as e:
                 body = str(e)
                 title = "Showstart failed."
-            send_notification(title, body, token, target=target)
+            send_notification(title, body, token, iden, target=target)
             commands.append('showstart')
         if 'cancel' in cmd:
             # Cancel the job
@@ -232,7 +232,7 @@ def parse_push(push, token, jobid, jobdetails):
             except Exception as e:
                 body = str(e)
                 title = "qdel failed."
-            send_notification(title, body, token, target=target)
+            send_notification(title, body, token, iden, target=target)
             commands.append('showstart')
             commands.append('cancel')
         if 'freemem' in cmd:
@@ -245,7 +245,7 @@ def parse_push(push, token, jobid, jobdetails):
             except Exception as e:
                 body = str(e)
                 title = "Freemem check failed."
-            send_notification(title, body, token, target=target)
+            send_notification(title, body, token, iden, target=target)
             commands.append('freemem')
         assert commands
     except KeyError as e:
@@ -304,7 +304,7 @@ def main():
                     started = True
 
                     if pb_token is not None and "start" in notify_on:
-                        start_notify(jobid, jobdetails, nodes, pb_token)
+                        start_notify(jobid, jobdetails, nodes, pb_token, iden)
 
                 #Check memory use
                 try:
@@ -322,7 +322,7 @@ def main():
                             logger.error('Error was:')
                             logger.error(e)
                         if pb_token is not None and "kill" in notify_on:
-                            kill_notify(jobid, jobdetails, nodes, freemem, pb_token)
+                            kill_notify(jobid, jobdetails, nodes, freemem, pb_token, iden)
                 except Exception as e:
                     logger.error("Freemem check failed.")
                     logger.error(e)
@@ -331,12 +331,12 @@ def main():
                 #Job finished. Notify if appropriate
                 finished = True
                 if pb_token is not None and "finish" in notify_on:
-                    finish_notify(jobid, jobdetails, pb_token)
+                    finish_notify(jobid, jobdetails, pb_token, iden)
                 break
 
             #Check for pushed commands 
             if pb_token is not None:
-                map(lambda push: parse_push(push, pb_token, jobid, jobdetails), check_pushes(iden, pb_token))
+                map(lambda push: parse_push(push, pb_token, jobid, jobdetails, iden), check_pushes(iden, pb_token))
             logger.debug("Sleeping for %ds" % sleep_time)
             sleep(sleep_time)
     except Exception:

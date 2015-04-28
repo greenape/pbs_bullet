@@ -84,7 +84,7 @@ def main():
     except Exception:
         raise
     finally:
-        job.delete_listener()
+        job.remove_notifier()
 
 if __name__ == "__main__":
     main()

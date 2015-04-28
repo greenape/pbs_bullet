@@ -289,6 +289,7 @@ def main():
             if pb_token is not None:
                 delete_listener(iden, pb_token)
             break
+        logger.debug("Job state is %s" % jobdetails['job_state'])
         if jobdetails['job_state'] == 'R':
             logger.debug("Job %s is running." % jobid)
             nodes = get_nodes(jobdetails)

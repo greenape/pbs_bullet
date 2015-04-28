@@ -236,7 +236,7 @@ def parse_push(push, token, jobid, jobdetails):
             try:
                 nodes = get_nodes(jobdetails)
                 freemem = map(check_free, nodes)
-                body = "Free memory - %s" % ", ".join(map(lambda (node, free): "%s: %f/%" % (node, free), zip(nodes, freemem)))
+                body = "Free memory - %s" % ", ".join(map(lambda (node, free): "%s: %s/%" % (node, free), zip(nodes, freemem)))
                 title = "Job %s (%s) Free Memory" % (jobdetails['Job_Name'], jobid)
             except Exception as e:
                 body = str(e)
@@ -302,7 +302,7 @@ def main():
             try:
                 logger.debug("Checking memory on %s" % ", ".join(nodes))
                 freemem = map(check_free, nodes)
-                logger.debug("Free memory - %s" % ", ".join(map(lambda (node, free): "%s: %f/%" % (node, free), zip(nodes, freemem))))
+                logger.debug("Free memory - %s" % ", ".join(map(lambda (node, free): "%s: %s/%" % (node, free), zip(nodes, freemem))))
                 if filter(lambda x: float(x) < lowmem, freemem):
                     logger.debug("Free memory below threshold. Killing the job.")
                     try:

@@ -58,7 +58,7 @@ def main():
     if args.submit:
         try:
             jobin = jobid
-            jobid = check_output(args.qsub + jobid])
+            jobid = check_output(args.qsub + jobid)
             jobid = jobid.strip().split(".")[0]
             logger.info("Submitted %s, got id %s" % (jobin, jobid))
         except Exception as e:

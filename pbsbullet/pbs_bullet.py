@@ -55,6 +55,7 @@ def main():
 
     logger.setLevel(numeric_level)
     jobid = args.jobid
+    job = None
     if args.submit:
         try:
             jobin = jobid

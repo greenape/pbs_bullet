@@ -1,3 +1,9 @@
+import json
+import urllib2, urllib
+import logging
+logging.basicConfig()
+logger = logging.getLogger('pbs_bullet.notifier')
+
 class Notifier(object):
 	def __init__(self, name, pb_token):
 		self.token = pb_token

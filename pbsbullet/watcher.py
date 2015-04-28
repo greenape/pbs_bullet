@@ -1,6 +1,6 @@
 import logging
 logging.basicConfig()
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('pbs_bullet.watcher')
 try:
     from subprocess import check_output, call
 except:

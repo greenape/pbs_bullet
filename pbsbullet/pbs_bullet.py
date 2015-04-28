@@ -15,8 +15,8 @@ import argparse
 import logging
 from time import sleep
 
-logging.basicConfig()
-logger = logging.getLogger(__name__)
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+logger = logging.getLogger('pbs_bullet')
 
 from watcher import Watcher
 

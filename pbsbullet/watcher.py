@@ -105,7 +105,7 @@ class Watcher(object):
         Output of qstat command munged into a dictionary.
         """
         try:
-            logger.debug("Checking status for job %s" % jobid)
+            logger.debug("Checking status for job %s" % self.jobid)
             jobdetails = parse_job(check_output(self.qstat_cmd))
         except Exception as e:
             logger.error('qstat command failed. Bailing out.')
@@ -151,7 +151,7 @@ class Watcher(object):
         """
         Send a notification that the job has started.
         """
-        title = "%s, id: %s, started." % (self.jobname, str(jobid))
+        title = "%s, id: %s, started." % (self.jobname, str(self.jobid))
         body = "Running on nodes %s, and started %s." % (", ".join(self.nodes), self.jobdetails['etime']) 
         self.notifier.send_notification(title, body)
 
@@ -159,7 +159,7 @@ class Watcher(object):
         """
         Send a notification that the job has completed.
         """
-        title = "%s, id: %s, finished." % (self.jobname, str(jobid))
+        title = "%s, id: %s, finished." % (self.jobname, str(self.jobid))
         body = ""
         self.notifier.send_notification(title, body)
 
@@ -167,7 +167,7 @@ class Watcher(object):
         """
         Send a notification that the job is being killed.
         """
-        title = "Attempting to kill job %s, id: %s." % (self.jobname, str(jobid))
+        title = "Attempting to kill job %s, id: %s." % (self.jobname, str(self.jobid))
         body = self.make_free_str()
         self.notifier.send_notification(title, body)
 

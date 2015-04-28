@@ -1,6 +1,6 @@
 from setuptools import setup
 
-__version__ = "0.1.1.0"
+__version__ = "0.1.2.0"
 
 setup(name='pbs_bullet',
         version=__version__,

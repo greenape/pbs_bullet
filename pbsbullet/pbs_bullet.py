@@ -12,19 +12,13 @@ j.gray@soton.ac.uk
 
 import sys
 import argparse
-import json
-import urllib2, urllib
 import logging
 from time import sleep
 
 logging.basicConfig()
 logger = logging.getLogger(__name__)
 
-try:
-    from subprocess import check_output, call
-except:
-    logger.error("pbs_bullet uses the check_output command, added in python 2.7.")
-    sys.exit(1)
+from watcher import Watcher
 
 def arguments():
     parser = argparse.ArgumentParser(
@@ -32,7 +26,7 @@ def arguments():
     parser.add_argument('jobid', help='Job id to monitor.')
     parser.add_argument('--pushbullet-token', type=str, dest="pb_token", default=None)
     parser.add_argument('--notify-on', type=str, nargs='*', dest="notify_on",
-        choices=["start", "finish", "killed", "fail"], default=["start", "finish", "killed", "fail"],
+        choices=["start", "finish", "killed"], default=["start", "finish", "killed"],
         help="Events to send a notification on.")
     parser.add_argument('--low-mem', type=float, dest="kill_threshold", default=0.,
         help="Kill the job using qdel if free memory on any one node drops below this \%.")
@@ -42,223 +36,14 @@ def arguments():
         'info', 'warning', 'error'], default='info', nargs="?")
     parser.add_argument('--submit', dest='submit', action="store_true",
         help="If set, assumes a pbs script has been passed and attempt to submit it.")
+    parser.add_argument('--qsub-cmd', dest='qsub_cmd', default=['qsub'],
+        help="Specifies the command to use to submit a pbs job.")
+    parser.add_argument('--qstat-cmd', dest='qstat_cmd', default=['qstat', '-f'],
+        help="Specifies the qstat command to use for checking status.")
+    parser.add_argument('--qdel-cmd', dest='qdel_cmd', default=['qdel'],
+        help="Specifies the command to use to delete a pbs job.")
     args, extras = parser.parse_known_args()
     return args
-
-
-def parse_job(jobdetails):
-    """
-    Turn the output of qstat -f into a dictionary.
-    """
-    lines = jobdetails.replace("\n\t", "").splitlines()[1:-1]
-    return dict(map(lambda line: tuple(line.strip().split(" = ")), lines))
-
-def get_nodes(job_dict):
-    """
-    Return a list of the nodes in use from a job dictionary.
-    """
-
-    nodes = job_dict['exec_host']
-    return list(set(map(lambda x: x.split('/')[0], nodes.split('+'))))
-
-def kill_job(jobid):
-    """
-    Attempt to kill a job using qdel.
-    """
-
-    return call(['qdel', jobid])
-
-def check_free(node):
-    """
-    Use rsh and free to get the percentage of free memory on a node.
-    """
-
-    return check_output(["rsh", node, "free", "|",  "awk",  "'FNR == 3 {print $4/($3+$4)*100}'"])
-
-def start_notify(jobid, jobdetails, nodes, pb_token, iden):
-    """
-    Send a notification that the job has started.
-    """
-    title = "%s, id: %s, started." % (jobdetails['Job_Name'], str(jobid))
-    body = "Running on nodes %s, and started %s." % (", ".join(nodes), jobdetails['etime']) 
-    send_notification(title, body, pb_token, iden)
-
-def finish_notify(jobid, jobdetails, pb_token, iden):
-    """
-    Send a notification that the job has completed.
-    """
-    title = "%s, id: %s, finished." % (jobdetails['Job_Name'], str(jobid))
-    body = ""
-    send_notification(title, body, pb_token, iden)
-
-def kill_notify(jobid, jobdetails, nodes, freemem, pb_token, iden):
-    """
-    Send a notification that the job is being killed.
-    """
-    title = "Attempting to kill job %s, id: %s." % (jobdetails['Job_Name'], str(jobid))
-    body = make_free_str(nodes, freemem)
-    send_notification(title, "\n".join(body), pb_token, iden)
-
-def send_notification(title, body, token, iden, target=None):
-    """
-    Send a pushbullet notification.
-    """
-    data = {"type":"note", "title": title, "body": body, "source_device_iden":iden}
-    if target is not None:
-        data['device_iden'] = target
-    note = json.dumps(data)
-    logger.debug("Sending %s to pushbullet." % note)
-    request = urllib2.Request('https://api.pushbullet.com/v2/pushes', note, headers={
-        'Authorization':"Bearer %s" % token,
-        'Content-Type':'application/json',
-        'Accept':'*/*'
-    })
-    try:
-        resp = urllib2.urlopen(request)
-    except urllib2.HTTPError as e:
-        logger.error("Pushbullet notify error.")
-        logger.error(e.read())
-
-def create_listener(name, token):
-    """
-    Register this device to receive pushbullet notifications,
-    and if successful return the identifier.
-    """
-    data = urllib.urlencode({'nickname':name, 'type':'streaming'})
-    logger.debug("Adding %s to pushbullet." % name)
-    request = urllib2.Request('https://api.pushbullet.com/v2/devices', data, headers={
-        'Authorization':"Bearer %s" % token,
-        'Accept':'*/*'
-    })
-    try:
-        resp = urllib2.urlopen(request)
-        return json.load(resp)['iden']
-    except urllib2.HTTPError as e:
-        logger.error("Pushbullet register error.")
-        logger.error(e.read())
-
-def delete_listener(iden, token):
-    """
-    Unregister this device as a listener.
-    """
-    logger.debug("Deleting %s from pushbullet." % iden)
-    request = urllib2.Request('https://api.pushbullet.com/v2/devices/%s' % iden, headers={
-        'Authorization':"Bearer %s" % token,
-        'Accept':'*/*'
-    })
-    request.get_method = lambda: 'DELETE'
-    try:
-        resp = urllib2.urlopen(request)
-        return json.load(resp)
-    except urllib2.HTTPError as e:
-        logger.error("Pushbullet delete error.")
-        logger.error(e.read())
-
-def delete_push(push, token):
-    """
-    Delete a push.
-    """
-    logger.debug("Deleting push id %s from pushbullet." % push['iden'])
-    request = urllib2.Request('https://api.pushbullet.com/v2/pushes/%s' % push['iden'], headers={
-        'Authorization':"Bearer %s" % token,
-        'Accept':'*/*'
-    })
-    request.get_method = lambda: 'DELETE'
-    try:
-        resp = urllib2.urlopen(request)
-        return json.load(resp)
-    except urllib2.HTTPError as e:
-        logger.error("Pushbullet delete error.")
-        logger.error(e.read())
-
-
-def check_pushes(iden, token):
-    """
-    Return any undismissed pushes for this device, and dismiss
-    them.
-    """
-    data = urllib.urlencode({'active':'0'})
-    logger.debug("Checking pushes for %s." % iden)
-    request = urllib2.Request('https://api.pushbullet.com/v2/pushes?%s' % data, headers={
-        'Authorization':"Bearer %s" % token,
-        'Accept':'*/*'
-    })
-    try:
-        resp = urllib2.urlopen(request)
-        pushes = json.load(resp)['pushes']
-        pushes = filter(lambda push: 'target_device_iden' in push.keys() and push['target_device_iden'] == iden, pushes)
-        logger.debug("Got %d pushes." % len(pushes))
-        #Delete them from the server
-        map(lambda push: delete_push(push, token), pushes)
-        pushes.reverse()
-        return pushes
-
-    except urllib2.HTTPError as e:
-        logger.error("Pushbullet check error.")
-        logger.error(e.read())
-
-def parse_push(push, token, jobid, jobdetails, iden):
-    """
-    Take a push, and execute some commands.
-    This is very primitive - we look for preset strings
-    in the body of the push.
-    """
-    logger.debug("Parsing push msg.")
-
-    try:
-        cmd = push['body'].lower()
-        logger.debug(cmd)
-        logger.debug(push)
-        try:
-            target = push['source_device_iden']
-        except KeyError:
-            logger.debug("No specific device to send to.")
-            target = None
-        commands = []
-        if 'showstart' in cmd:
-            # Return the starttime for this job.
-            try:
-                body = check_output(['showstart', jobid])
-                title = "Job %s (%s) Start Time" % (jobdetails['Job_Name'], jobid)
-            except Exception as e:
-                body = str(e)
-                title = "Showstart failed."
-            send_notification(title, body, token, iden, target=target)
-            commands.append('showstart')
-        if 'cancel' in cmd:
-            # Cancel the job
-            try:
-                kill_job(jobid)
-                title = "Attempting to kill job %s, id: %s." % (jobdetails['Job_Name'], str(jobid))
-                body = ""
-            except Exception as e:
-                body = str(e)
-                title = "qdel failed."
-            send_notification(title, body, token, iden, target=target)
-            commands.append('showstart')
-            commands.append('cancel')
-        if 'freemem' in cmd:
-            # Get the free memory for nodes
-            try:
-                nodes = get_nodes(jobdetails)
-                freemem = map(check_free, nodes)
-                body = make_free_str(nodes, freemem)
-                title = "Job %s (%s) Free Memory" % (jobdetails['Job_Name'], jobid)
-            except Exception as e:
-                body = str(e)
-                title = "Freemem check failed."
-            send_notification(title, body, token, iden, target=target)
-            commands.append('freemem')
-        assert commands
-    except KeyError as e:
-        logger.debug(e)
-        logger.debug("No body in this push.")
-    except AssertionError:
-        logger.debug("No commands in this push.")
-
-
-def make_free_str(nodes, freemem):
-    return "Free memory - %s" % ", ".join(map(lambda (node, free): "%s: %s%%" % (node, free.strip()), zip(nodes, freemem)))
 
 def main():
     args = arguments()
@@ -266,12 +51,14 @@ def main():
     if not isinstance(numeric_level, int):
         raise ValueError('Invalid log level: %s' % log_level)
 
+    #Get commands
+
     logger.setLevel(numeric_level)
     jobid = args.jobid
     if args.submit:
         try:
             jobin = jobid
-            jobid = check_output(['qsub', jobid])
+            jobid = check_output(args.qsub + jobid])
             jobid = jobid.strip().split(".")[0]
             logger.info("Submitted %s, got id %s" % (jobin, jobid))
         except Exception as e:
@@ -281,82 +68,23 @@ def main():
 
     pb_token = args.pb_token
     sleep_time = args.poll_interval
-    notify_on = args.notify_on
+    events = args.notify_on
     lowmem = args.kill_threshold
 
-    started = False
-    finished = False
-
+    # Create the job object
+    job = Watcher(jobid, args.qstat, args.qdel, args.showstart, events, lowmem=lowmem, pb_token=pb_token))
+    # Set a notifier for it
+    if pb_token:
+        job.set_notifier(pb_token)
     try:
-        if pb_token is not None:
-            try:
-                logger.debug("Checking status for job %s" % jobid)
-                jobdetails = parse_job(check_output(['qstat', '-f', jobid]))
-            except Exception as e:
-                logger.error('qstat command failed. Bailing out.')
-                logger.error('Error was:')
-                logger.error(e)
-                raise
-            name = "%s - %s" % (jobdetails['Job_Name'], jobid)
-            iden = create_listener(name, pb_token)
-
         while not finished:
-            try:
-                logger.debug("Checking status for job %s" % jobid)
-                jobdetails = parse_job(check_output(['qstat', '-f', jobid]))
-            except Exception as e:
-                logger.error('qstat command failed. Bailing out.')
-                logger.error('Error was:')
-                logger.error(e)
-                raise
-            logger.debug("Job state is %s" % jobdetails['job_state'])
-            if jobdetails['job_state'] == 'R':
-                logger.debug("Job %s is running." % jobid)
-                nodes = get_nodes(jobdetails)
-                if not started:
-                    started = True
-
-                    if pb_token is not None and "start" in notify_on:
-                        start_notify(jobid, jobdetails, nodes, pb_token, iden)
-
-                #Check memory use
-                try:
-                    logger.debug("Checking memory on %s" % ", ".join(nodes))
-                    freemem = map(check_free, nodes)
-                    logger.debug(str(freemem))
-                    logger.debug(str(nodes))
-                    logger.debug(make_free_str(nodes, freemem))
-                    if filter(lambda x: float(x) < lowmem, freemem):
-                        logger.debug("Free memory below threshold. Killing the job.")
-                        try:
-                            kill_job(jobid)
-                        except Exception as e:
-                            logger.error("qdel command failed.")
-                            logger.error('Error was:')
-                            logger.error(e)
-                        if pb_token is not None and "kill" in notify_on:
-                            kill_notify(jobid, jobdetails, nodes, freemem, pb_token, iden)
-                except Exception as e:
-                    logger.error("Freemem check failed.")
-                    logger.error(e)
-
-            elif jobdetails['job_state'] != 'R' and started:
-                #Job finished. Notify if appropriate
-                finished = True
-                if pb_token is not None and "finish" in notify_on:
-                    finish_notify(jobid, jobdetails, pb_token, iden)
-                break
-
-            #Check for pushed commands 
-            if pb_token is not None:
-                map(lambda push: parse_push(push, pb_token, jobid, jobdetails, iden), check_pushes(iden, pb_token))
+            job.update()
             logger.debug("Sleeping for %ds" % sleep_time)
             sleep(sleep_time)
     except Exception:
         raise
     finally:
-        if pb_token is not None:
-            delete_listener(iden, pb_token)
+        job.delete_listener()
 
 if __name__ == "__main__":
     main()

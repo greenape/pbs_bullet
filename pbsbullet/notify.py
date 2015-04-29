@@ -15,7 +15,7 @@ class Notifier(object):
         Register this device to receive pushbullet notifications,
         and if successful return the identifier.
         """
-        data = urllib.urlencode({'nickname':self.name, 'type':'streaming'})
+        data = urllib.urlencode({'nickname':self.name, 'type':'stream'})
         logger.debug("Adding %s to pushbullet." % self.name)
         request = urllib2.Request('https://api.pushbullet.com/v2/devices', data, headers={
             'Authorization':"Bearer %s" % self.token,

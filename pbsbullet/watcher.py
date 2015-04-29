@@ -154,7 +154,7 @@ class Watcher(object):
         Send a notification that the job has started.
         """
         title = "%s, id: %s, started." % (self.jobname, str(self.jobid))
-        body = "Running on nodes %s, and started %s." % (", ".join(self.nodes), self.jobdetails['etime']) 
+        body = "Running on nodes %s, and started %s." % (", ".join(self.nodes), self.jobdetails['start_time']) 
         self.notifier.send_notification(title, body)
 
     def error_notify(self, error):
@@ -181,6 +181,14 @@ class Watcher(object):
         body = self.make_free_str()
         self.notifier.send_notification(title, body)
 
+    def mkwalltime(self, seconds):
+        """
+        Make an hours:minutes:seconds string from seconds.
+        """
+        seconds = int(seconds)
+        m, s = divmod(seconds, 60)
+        h, m = divmod(m, 60)
+        return "%d:%02d:%02d" % (h, m, s)
 
     def parse_push(self, push):
         """
@@ -210,6 +218,18 @@ class Watcher(object):
                     title = "Showstart failed."
                 self.notifier.send_notification(title, body, target=target)
                 commands.append('showstart')
+            if 'walltime' in cmd:
+                # Return the starttime for this job.
+                try:
+                    remaining = self.mkwalltime(self.jobdetails['Walltime.Remaining'])
+                    requested = self.jobdetails['Resource_List.walltime']
+                    body = "%s walltime left of %s" % (remaining, requested)
+                    title = "Job %s (%s) Remaining walltime" % (self.jobname, self.jobid)
+                except Exception as e:
+                    body = str(e)
+                    title = "Walltime failed."
+                self.notifier.send_notification(title, body, target=target)
+                commands.append('walltime')
             if 'cancel' in cmd:
                 # Cancel the job
                 try:

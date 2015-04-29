@@ -59,7 +59,7 @@ class Watcher(object):
                 self.nodes = get_nodes()
                 if self.notifier:
                     self.start_notify()
-        elif self.jobdetails['job_state'] != 'R' and selfstarted:
+        elif self.jobdetails['job_state'] != 'R' and self.started:
             #Job finished. Notify if appropriate
             self.finished = True
             if notifier and "finish" in self.events:

@@ -18,10 +18,9 @@ class Watcher(object):
 
         self.started = False
         self.finished = False
-
+        self.notifier = None
         self.update()
         self.jobname = self.jobdetails['Job_Name']
-        self.notifier = None
         if pb_token:
             self.notifier = self.set_notifier(pb_token)
 

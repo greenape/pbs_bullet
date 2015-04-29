@@ -59,7 +59,7 @@ class Watcher(object):
                 self.nodes = get_nodes()
                 if self.notifier:
                     self.start_notify()
-        elif jobdetails['job_state'] != 'R' and started:
+        elif self.jobdetails['job_state'] != 'R' and selfstarted:
             #Job finished. Notify if appropriate
             self.finished = True
             if notifier and "finish" in self.events:
@@ -120,7 +120,7 @@ class Watcher(object):
         Return a list of the nodes in use from a job dictionary.
         """
 
-        nodes = self.job_dict['exec_host']
+        nodes = self.jobdetails['exec_host']
         return list(set(map(lambda x: x.split('/')[0], nodes.split('+'))))
 
     def kill_job(self):

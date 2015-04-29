@@ -80,7 +80,7 @@ class Notifier(object):
             pushes = filter(lambda push: 'target_device_iden' in push.keys() and push['target_device_iden'] == self.iden, pushes)
             logger.debug("Got %d pushes." % len(pushes))
             #Delete them from the server
-            map(lambda push: delete_push(push), pushes)
+            map(lambda push: self.delete_push(push), pushes)
             pushes.reverse()
             return pushes
 

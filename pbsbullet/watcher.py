@@ -146,7 +146,7 @@ class Watcher(object):
         return check_output(["rsh", node, "free", "|",  "awk",  "'FNR == 3 {print $4/($3+$4)*100}'"])
 
     def make_free_str(self):
-        return "Free memory - %s" % ", ".join(map(lambda (node, free): "%s: %s%%" % (node, free.strip()), zip(self.nodes, self.freemem)))
+        return "Free memory - %s" % ", ".join(map(lambda (node, free): "%s: %s%%" % (node, free.strip()), self.freemem))
 
     def start_notify(self):
         """

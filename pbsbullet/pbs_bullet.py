@@ -85,7 +85,7 @@ def main():
         # Set a notifier for it
         if pb_token:
             job.set_notifier(pb_token)
-        while not finished:
+        while not job.finished:
             job.update()
             logger.debug("Sleeping for %ds" % sleep_time)
             sleep(sleep_time)

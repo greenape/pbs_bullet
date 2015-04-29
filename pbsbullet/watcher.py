@@ -76,7 +76,7 @@ class Watcher(object):
         try:
             logger.debug("Checking memory on %s" % ", ".join(self.nodes))
             self.freemem = self.check_free()
-            logger.debug(make_free_str())
+            logger.debug(self.make_free_str())
             if filter(lambda (node, mem): float(mem) < lowmem, self.freemem):
                 logger.debug("Free memory below threshold. Killing the job.")
                 try:

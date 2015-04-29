@@ -20,6 +20,7 @@ class Watcher(object):
         self.finished = False
         self.notifier = None
         self.update()
+        self.started = False #Need to reset after qstat to get job details
         self.jobname = self.jobdetails['Job_Name']
         if pb_token:
             self.notifier = self.set_notifier(pb_token)

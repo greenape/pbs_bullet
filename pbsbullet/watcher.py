@@ -55,7 +55,7 @@ class Watcher(object):
                 self.memory_safety()
             else:
                 self.started = True
-                self.nodes = get_nodes()
+                self.nodes = self.get_nodes()
                 if self.notifier:
                     self.start_notify()
         elif self.jobdetails['job_state'] != 'R' and self.started:

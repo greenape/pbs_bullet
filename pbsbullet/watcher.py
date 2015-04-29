@@ -61,11 +61,11 @@ class Watcher(object):
         elif self.jobdetails['job_state'] != 'R' and self.started:
             #Job finished. Notify if appropriate
             self.finished = True
-            if notifier and "finish" in self.events:
+            if self.notifier and "finish" in self.events:
                 self.finish_notify()
         #Check for and act on pushes
         if self.notifier:
-            map(self.parse_push, notifier.check_pushes())
+            map(self.parse_push, self.notifier.check_pushes())
 
 
     def memory_safety(self):

@@ -110,6 +110,8 @@ class Watcher(object):
             logger.error('qstat command failed. Bailing out.')
             logger.error('Error was:')
             logger.error(e)
+            if self.notifier and "error" in self.events:
+                self.error_notify(e)
             raise
         return jobdetails
 
@@ -152,6 +154,14 @@ class Watcher(object):
         """
         title = "%s, id: %s, started." % (self.jobname, str(self.jobid))
         body = "Running on nodes %s, and started %s." % (", ".join(self.nodes), self.jobdetails['etime']) 
+        self.notifier.send_notification(title, body)
+
+    def error_notify(self, error):
+        """
+        Send a notification that the watcher has hit an error.
+        """
+        title = "%s, id: %s, watcher error." % (self.jobname, str(self.jobid))
+        body = str(error)
         self.notifier.send_notification(title, body)
 
     def finish_notify(self):

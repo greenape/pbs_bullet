@@ -31,7 +31,7 @@ def arguments():
     parser.add_argument('jobid', help='Job id to monitor.')
     parser.add_argument('--pushbullet-token', type=str, dest="pb_token", default=None)
     parser.add_argument('--notify-on', type=str, nargs='*', dest="notify_on",
-        choices=["start", "finish", "killed"], default=["start", "finish", "killed"],
+        choices=["start", "finish", "killed", "error"], default=["start", "finish", "killed", "error"],
         help="Events to send a notification on.")
     parser.add_argument('--low-mem', type=float, dest="kill_threshold", default=0.,
         help="Kill the job using qdel if free memory on any one node drops below this \%.")

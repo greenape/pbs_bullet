@@ -27,6 +27,9 @@ class Notifier(object):
         except urllib2.HTTPError as e:
             logger.error("Pushbullet register error.")
             logger.error(e.read())
+        except urllib2.URLError as e:
+            logger.error("Pushbullet register error.")
+            logger.error(e)
 
     def delete_listener(self):
         """
@@ -42,8 +45,11 @@ class Notifier(object):
             resp = urllib2.urlopen(request)
             return json.load(resp)
         except urllib2.HTTPError as e:
-            logger.error("Pushbullet delete error.")
+            logger.error("Pushbullet delete listener error.")
             logger.error(e.read())
+        except urllib2.URLError as e:
+            logger.error("Pushbullet delete listener error.")
+            logger.error(e)
 
     def delete_push(self, push):
         """
@@ -61,6 +67,9 @@ class Notifier(object):
         except urllib2.HTTPError as e:
             logger.error("Pushbullet delete error.")
             logger.error(e.read())
+        except urllib2.URLError as e:
+            logger.error("Pushbullet delete error.")
+            logger.error(e)
 
 
     def check_pushes(self):
@@ -87,6 +96,9 @@ class Notifier(object):
         except urllib2.HTTPError as e:
             logger.error("Pushbullet check error.")
             logger.error(e.read())
+        except urllib2.URLError as e:
+            logger.error("Pushbullet check error.")
+            logger.error(e)
 
     def send_notification(self, title, body, target=None):
         """
@@ -107,3 +119,6 @@ class Notifier(object):
         except urllib2.HTTPError as e:
             logger.error("Pushbullet notify error.")
             logger.error(e.read())
+        except urllib2.URLError as e:
+            logger.error("Pushbullet notify error.")
+            logger.error(e)

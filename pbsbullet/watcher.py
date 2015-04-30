@@ -253,6 +253,9 @@ class Watcher(object):
                     title = "Freemem check failed."
                 self.notifier.send_notification(title, body, target=target)
                 commands.append('freemem')
+            if 'killwatcher' in cmd:
+                #Kill this watcher.
+                raise Exception('Killed by Push command.')
             assert commands
         except KeyError as e:
             logger.debug(e)

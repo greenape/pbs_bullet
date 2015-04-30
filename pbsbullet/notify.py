@@ -83,6 +83,7 @@ class Notifier(object):
             'Authorization':"Bearer %s" % self.token,
             'Accept':'*/*'
         })
+        pushes = []
         try:
             resp = urllib2.urlopen(request)
             pushes = json.load(resp)['pushes']
@@ -91,7 +92,6 @@ class Notifier(object):
             #Delete them from the server
             map(lambda push: self.delete_push(push), pushes)
             pushes.reverse()
-            return pushes
 
         except urllib2.HTTPError as e:
             logger.error("Pushbullet check error.")
@@ -99,6 +99,8 @@ class Notifier(object):
         except urllib2.URLError as e:
             logger.error("Pushbullet check error.")
             logger.error(e)
+        finally:
+            return pushes
 
     def send_notification(self, title, body, target=None):
         """

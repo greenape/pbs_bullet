@@ -15,6 +15,7 @@ class Watcher(object):
         self.qdel_cmd = qdel + [jobid]
         self.showstart_cmd = showstart + [jobid]
         self.lowmem = lowmem
+        self.events = events
 
         self.started = False
         self.finished = False
@@ -57,7 +58,7 @@ class Watcher(object):
             else:
                 self.started = True
                 self.nodes = self.get_nodes()
-                if self.notifier:
+                if self.notifier and "start" in self.events:
                     self.start_notify()
         elif self.jobdetails['job_state'] != 'R' and self.started:
             #Job finished. Notify if appropriate

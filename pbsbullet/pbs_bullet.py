@@ -49,6 +49,8 @@ def arguments():
         help="Specifies the command to use to delete a pbs job.")
     parser.add_argument('--showstart-cmd', dest='showstart_cmd', default=['showstart'],
         help="Specifies the command to use to get the estimated start time.")
+    parser.add_argument('--listener-name', dest='listener_name', default=None,
+        help="Override the name derived from the job script.")
     args, extras = parser.parse_known_args()
     return args
 
@@ -84,7 +86,7 @@ def main():
         job = Watcher(jobid, args.qstat_cmd, args.qdel_cmd, args.showstart_cmd, events, lowmem=lowmem)
         # Set a notifier for it
         if pb_token:
-            job.set_notifier(pb_token)
+            job.set_notifier(pb_token, args.listener_name)
         while not job.finished:
             job.update()
             logger.debug("Sleeping for %ds" % sleep_time)

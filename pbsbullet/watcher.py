@@ -26,14 +26,16 @@ class Watcher(object):
         if pb_token:
             self.notifier = self.set_notifier(pb_token)
 
-    def set_notifier(self, pb_token):
+    def set_notifier(self, pb_token, name=None):
         """
         Add a pushbullet notifier to the job.
         There can only be one notifier.
 
         """
         self.remove_notifier()
-        self.notifier = Notifier("%s - %s" % (self.jobname, self.jobid), pb_token)
+        if name is None:
+            name = "%s - %s" % (self.jobname, self.jobid)
+        self.notifier = Notifier(name, pb_token)
 
     def remove_notifier(self):
         """

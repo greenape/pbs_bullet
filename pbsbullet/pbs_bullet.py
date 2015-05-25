@@ -100,6 +100,7 @@ def main():
                 sleep(sleep_time)
             else:
                 logger.debug("Job finished. Exiting.")
+                break
     except Exception:
         raise
     finally:

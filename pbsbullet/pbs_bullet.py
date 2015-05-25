@@ -39,6 +39,7 @@ def arguments():
         help="Number of seconds to wait between each check. Defaults to 5 minutes.")
     parser.add_argument('--log-level', dest='log_level', type=str, choices=['debug',
         'info', 'warning', 'error'], default='info', nargs="?")
+    parser.add_argument('--log-file', dest='log_file', type=str, default='')
     parser.add_argument('--submit', dest='submit', action="store_true",
         help="If set, assumes a pbs script has been passed and attempt to submit it.")
     parser.add_argument('--qsub-cmd', dest='qsub_cmd', default=['qsub'],
@@ -59,10 +60,14 @@ def main():
     numeric_level = getattr(logging, args.log_level.upper(), None)
     if not isinstance(numeric_level, int):
         raise ValueError('Invalid log level: %s' % log_level)
-
     #Get commands
 
     logger.setLevel(numeric_level)
+    if args.log_file != "":
+        fh = logging.FileHandler(args.log_file)
+        fh.setLevel(numeric_level)
+        fh.setFormatter(formatter)
+        logger.addHandler(fh)
     jobid = args.jobid
     job = None
     if args.submit:

@@ -95,8 +95,11 @@ def main():
             job.set_notifier(pb_token, args.listener_name)
         while not job.finished:
             job.update()
-            logger.debug("Sleeping for %ds" % sleep_time)
-            sleep(sleep_time)
+            if not job.finished:
+                logger.debug("Sleeping for %ds" % sleep_time)
+                sleep(sleep_time)
+            else:
+                logger.debug("Job finished. Exiting.")
     except Exception:
         raise
     finally:

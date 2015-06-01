@@ -109,7 +109,7 @@ class Watcher(object):
         """
         try:
             logger.debug("Checking status for job %s" % self.jobid)
-            jobdetails = self.parse_job(check_output(self.qstat_cmd))
+            jobdetails = self.parse_job(check_output(self.qstat_cmd, timeout=60))
         except Exception as e:
             logger.error('qstat command failed. Bailing out.')
             logger.error('Error was:')
@@ -147,7 +147,7 @@ class Watcher(object):
         Use rsh and free to get the percentage of free memory on a node.
         """
 
-        return check_output(["rsh", node, "free", "|",  "awk",  "'FNR == 3 {print $4/($3+$4)*100}'"])
+        return check_output(["rsh", node, "free", "|",  "awk",  "'FNR == 3 {print $4/($3+$4)*100}'"], timeout=60)
 
     def make_free_str(self):
         return "Free memory - %s" % ", ".join(map(lambda (node, free): "%s: %s%%" % (node, free.strip()), self.freemem))
@@ -214,7 +214,7 @@ class Watcher(object):
             if 'showstart' in cmd:
                 # Return the starttime for this job.
                 try:
-                    body = check_output(self.showstart_cmd)
+                    body = check_output(self.showstart_cmd, timeout=60)
                     title = "Job %s (%s) Start Time" % (self.jobname, self.jobid)
                 except Exception as e:
                     body = str(e)

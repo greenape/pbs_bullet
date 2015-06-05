@@ -8,6 +8,7 @@ except:
     sys.exit(1)
 from notify import Notifier
 
+
 class Watcher(object):
     def __init__(self, jobid, qstat, qdel, showstart, events, lowmem=0., pb_token=None):
         self.jobid = jobid
@@ -21,7 +22,7 @@ class Watcher(object):
         self.finished = False
         self.notifier = None
         self.update()
-        self.started = False #Need to reset after qstat to get job details
+        self.started = False  # Need to reset after qstat to get job details
         self.jobname = self.jobdetails['Job_Name']
         if pb_token:
             self.notifier = self.set_notifier(pb_token)
@@ -52,10 +53,10 @@ class Watcher(object):
         checks for and acts on pushes, and kills itself if required.
         """
         self.jobdetails = self.qstat()
-        #Check and update run/finish status
+        # Check and update run/finish status
         if self.jobdetails['job_state'] == 'R':
             if self.started:
-                #Check memory use
+                # Check memory use
                 self.memory_safety()
             else:
                 self.started = True
@@ -63,14 +64,13 @@ class Watcher(object):
                 if self.notifier and "start" in self.events:
                     self.start_notify()
         elif self.jobdetails['job_state'] != 'R' and self.started:
-            #Job finished. Notify if appropriate
+            # Job finished. Notify if appropriate
             self.finished = True
             if self.notifier and "finish" in self.events:
                 self.finish_notify()
-        #Check for and act on pushes
+        # Check for and act on pushes
         if self.notifier:
             map(self.parse_push, self.notifier.check_pushes())
-
 
     def memory_safety(self):
         """

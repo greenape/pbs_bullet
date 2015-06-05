@@ -27,6 +27,7 @@ except:
 
 from watcher import Watcher
 
+
 def arguments():
     parser = argparse.ArgumentParser(
         description="Watch a PBS job. Can optionally send notifications by pushbullet, and kill the job if low on memory.")
@@ -57,12 +58,13 @@ def arguments():
     args, extras = parser.parse_known_args()
     return args
 
+
 def main():
     args = arguments()
     numeric_level = getattr(logging, args.log_level.upper(), None)
     if not isinstance(numeric_level, int):
         raise ValueError('Invalid log level: %s' % args.log_level)
-    #Get commands
+    # Get commands
 
     logger.setLevel(numeric_level)
     if args.log_file != "":
@@ -78,7 +80,7 @@ def main():
             jobid = check_output(args.qsub_cmd + [jobid])
             jobid = jobid.strip().split(".")[0]
             logger.info("Submitted %s, got id %s" % (jobin, jobid))
-        except Exception as e:
+        except Exception:
             logger.error("Failed to submit %s" % jobin)
             logger.error("Bailing out.")
             raise

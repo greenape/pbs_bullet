@@ -4,6 +4,7 @@ import logging
 logging.basicConfig()
 logger = logging.getLogger('pbs_bullet.notifier')
 
+
 class Notifier(object):
     def __init__(self, name, pb_token):
         self.token = pb_token
@@ -15,11 +16,11 @@ class Notifier(object):
         Register this device to receive pushbullet notifications,
         and if successful return the identifier.
         """
-        data = urllib.urlencode({'nickname':self.name, 'type':'stream'})
+        data = urllib.urlencode({'nickname': self.name, 'type': 'stream'})
         logger.debug("Adding %s to pushbullet." % self.name)
         request = urllib2.Request('https://api.pushbullet.com/v2/devices', data, headers={
-            'Authorization':"Bearer %s" % self.token,
-            'Accept':'*/*'
+            'Authorization': "Bearer %s" % self.token,
+            'Accept': '*/*'
         })
         try:
             resp = urllib2.urlopen(request)
@@ -37,8 +38,8 @@ class Notifier(object):
         """
         logger.debug("Deleting %s from pushbullet." % self.iden)
         request = urllib2.Request('https://api.pushbullet.com/v2/devices/%s' % self.iden, headers={
-            'Authorization':"Bearer %s" % self.token,
-            'Accept':'*/*'
+            'Authorization': "Bearer %s" % self.token,
+            'Accept': '*/*'
         })
         request.get_method = lambda: 'DELETE'
         try:
@@ -57,8 +58,8 @@ class Notifier(object):
         """
         logger.debug("Deleting push id %s from pushbullet." % push['iden'])
         request = urllib2.Request('https://api.pushbullet.com/v2/pushes/%s' % push['iden'], headers={
-            'Authorization':"Bearer %s" % self.token,
-            'Accept':'*/*'
+            'Authorization': "Bearer %s" % self.token,
+            'Accept': '*/*'
         })
         request.get_method = lambda: 'DELETE'
         try:
@@ -71,17 +72,16 @@ class Notifier(object):
             logger.error("Pushbullet delete error.")
             logger.error(e)
 
-
     def check_pushes(self):
         """
         Return any undismissed pushes for this device, and dismiss
         them.
         """
-        data = urllib.urlencode({'active':'0'})
+        data = urllib.urlencode({'active': '0'})
         logger.debug("Checking pushes for %s." % self.iden)
         request = urllib2.Request('https://api.pushbullet.com/v2/pushes?%s' % data, headers={
-            'Authorization':"Bearer %s" % self.token,
-            'Accept':'*/*'
+            'Authorization': "Bearer %s" % self.token,
+            'Accept': '*/*'
         })
         pushes = []
         try:
@@ -89,7 +89,7 @@ class Notifier(object):
             pushes = json.load(resp)['pushes']
             pushes = filter(lambda push: 'target_device_iden' in push.keys() and push['target_device_iden'] == self.iden, pushes)
             logger.debug("Got %d pushes." % len(pushes))
-            #Delete them from the server
+            # Delete them from the server
             map(lambda push: self.delete_push(push), pushes)
             pushes.reverse()
 

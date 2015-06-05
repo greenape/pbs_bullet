@@ -12,7 +12,8 @@ setup(name='pbs_bullet',
         license='MIT',
         packages=['pbsbullet'],
         include_package_data=True,
-        zip_safe=False
+        zip_safe=False,
+        requires=["subprocess32"]
 )
 
 with open("pbsbullet/_version.py", "w") as fp:

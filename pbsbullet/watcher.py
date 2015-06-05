@@ -2,7 +2,7 @@ import logging
 logging.basicConfig()
 logger = logging.getLogger('pbs_bullet.watcher')
 try:
-    from subprocess import check_output, call
+    from subprocess32 import check_output, call
 except:
     logger.error("pbs_bullet uses the check_output command, added in python 2.7.")
     sys.exit(1)

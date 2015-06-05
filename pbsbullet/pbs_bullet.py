@@ -14,15 +14,16 @@ import sys
 import argparse
 import logging
 from time import sleep
-try:
-    from subprocess import check_output, call
-except:
-    logger.error("pbs_bullet uses the check_output command, added in python 2.7.")
-    sys.exit(1)
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logger = logging.getLogger('pbs_bullet')
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+try:
+    from subprocess32 import check_output, call
+except:
+    logger.error("pbs_bullet uses the check_output command, added in python 2.7.")
+    sys.exit(1)
 
 from watcher import Watcher
 
@@ -60,7 +61,7 @@ def main():
     args = arguments()
     numeric_level = getattr(logging, args.log_level.upper(), None)
     if not isinstance(numeric_level, int):
-        raise ValueError('Invalid log level: %s' % log_level)
+        raise ValueError('Invalid log level: %s' % args.log_level)
     #Get commands
 
     logger.setLevel(numeric_level)

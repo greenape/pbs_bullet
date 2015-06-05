@@ -1,4 +1,4 @@
-import logging
+import logging, sys
 logging.basicConfig()
 logger = logging.getLogger('pbs_bullet.watcher')
 try:
@@ -90,13 +90,14 @@ class Watcher(object):
                     logger.error('Error was:')
                     logger.error(e)
                 if self.notifier and "kill" in self.events:
-                    kill_notify()
+                    self.kill_notify()
         except Exception as e:
             logger.error("Freemem check failed.")
             logger.error(e)
 
 
-    def parse_job(self, jobdetails):
+    @staticmethod
+    def parse_job(jobdetails):
         """
         Turn the output of qstat -f into a dictionary.
         """
@@ -142,7 +143,8 @@ class Watcher(object):
         """
         return zip(self.nodes, map(self._check_free, self.nodes))
 
-    def _check_free(self, node):
+    @staticmethod
+    def _check_free(node):
         """
         Use rsh and free to get the percentage of free memory on a node.
         """
@@ -176,7 +178,7 @@ class Watcher(object):
         body = ""
         self.notifier.send_notification(title, body)
 
-    def kill_notify(self, freemem):
+    def kill_notify(self):
         """
         Send a notification that the job is being killed.
         """
@@ -184,7 +186,8 @@ class Watcher(object):
         body = self.make_free_str()
         self.notifier.send_notification(title, body)
 
-    def mkwalltime(self, seconds):
+    @staticmethod
+    def mkwalltime(seconds):
         """
         Make an hours:minutes:seconds string from seconds.
         """
